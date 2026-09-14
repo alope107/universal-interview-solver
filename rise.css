@@ -1,0 +1,114 @@
+/* rise.css — place alongside the .ipynb. Applies to every notebook in this dir.
+   Knobs:
+     --rise-base           overall size, 1 = JupyterLab defaults
+     --rise-heading-scale  h1–h4 relative to scale, 1 = untouched
+   Per-cell:  wrap markdown in <div class="rise-sm"> … </div>
+   Per-slide: put <span class="rise-slide-sm"></span> in any markdown cell on the slide
+   Presets: xs = 0.6x, sm = 0.75x, lg = 1.25x, xl = 2x of --rise-base */
+
+.reveal {
+  --rise-base: 2;
+  --rise-scale: var(--rise-base);
+  --rise-heading-scale: 0.8;
+  --jp-content-line-height: 1.4;
+  --jp-code-line-height: 1.45;
+}
+
+/* Per-cell presets (wrap content in a div with one of these) */
+.reveal .rise-xs { --rise-scale: calc(var(--rise-base) * 0.6); }
+.reveal .rise-sm { --rise-scale: calc(var(--rise-base) * 0.75); }
+.reveal .rise-lg { --rise-scale: calc(var(--rise-base) * 1.25); }
+.reveal .rise-xl { --rise-scale: calc(var(--rise-base) * 2.0); }
+
+/* Per-slide presets (marker span anywhere on the slide; leaf sections only,
+   so a marker on one sub-slide doesn't hit the whole vertical stack) */
+.reveal section:not(:has(section)):has(.rise-slide-xs) { --rise-scale: calc(var(--rise-base) * 0.6); }
+.reveal section:not(:has(section)):has(.rise-slide-sm) { --rise-scale: calc(var(--rise-base) * 0.75); }
+.reveal section:not(:has(section)):has(.rise-slide-lg) { --rise-scale: calc(var(--rise-base) * 1.25); }
+
+/* Live vertical centering. reveal writes an inline top:<px> per slide at layout
+   time and never updates it when a cell grows (jupyterlab-contrib/rise#93).
+   Override it and let flex center the content continuously instead. */
+.reveal .slides section.present:not(.stack) {
+  top: 0 !important;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: safe center;
+}
+
+/* Derived sizes, recomputed on every element from its inherited --rise-scale */
+.reveal,
+.reveal * {
+  /* Markdown body (Lab default 14px); h5/h6 also use this */
+  --jp-content-font-size1: calc(14px * var(--rise-scale));
+
+  /* Headings: h4 / h3 / h2 / h1 (Lab defaults 16/20/24/28px) */
+  --jp-content-font-size2: calc(17px * var(--rise-scale) * var(--rise-heading-scale));
+  --jp-content-font-size3: calc(20px * var(--rise-scale) * var(--rise-heading-scale));
+  --jp-content-font-size4: calc(24px * var(--rise-scale) * var(--rise-heading-scale));
+  --jp-content-font-size5: calc(30px * var(--rise-scale) * var(--rise-heading-scale));
+
+  /* Code cells, text outputs, and markdown fences (Lab default 13px) */
+  --jp-code-font-size: calc(13px * var(--rise-scale));
+
+  /* Widgets, prompts, misc chrome (Lab default 13px) */
+  --jp-ui-font-size1: calc(13px * var(--rise-scale));
+
+  /* Derived spacing */
+  --rise-cell-pad: calc(0.15em * var(--rise-scale));
+}
+
+/* Fallbacks for Lab rules that hard-code sizes instead of using the vars */
+.reveal .jp-RenderedHTMLCommon,
+.reveal .jp-MarkdownOutput {
+  font-size: var(--jp-content-font-size1) !important;
+  line-height: var(--jp-content-line-height) !important;
+}
+
+/* Wrapper divs need the size applied too, since the cell-level rule above is on the container */
+.reveal .rise-xs,
+.reveal .rise-sm,
+.reveal .rise-lg,
+.reveal .rise-xl {
+  font-size: var(--jp-content-font-size1) !important;
+}
+
+/* Live code cells and their text outputs */
+.reveal .cm-editor,
+.reveal .cm-editor .cm-content,
+.reveal .cm-editor .cm-line,
+.reveal .jp-RenderedText pre,
+.reveal .jp-OutputArea-output pre {
+  font-size: var(--jp-code-font-size) !important;
+  line-height: var(--jp-code-line-height) !important;
+}
+
+/* Fenced ``` blocks inside markdown cells */
+.reveal .jp-RenderedHTMLCommon pre,
+.reveal .jp-RenderedHTMLCommon pre code {
+  font-size: var(--jp-code-font-size) !important;
+  line-height: var(--jp-code-line-height) !important;
+}
+
+/* Inline `code` in markdown follows the surrounding text */
+.reveal .jp-RenderedHTMLCommon :not(pre) > code {
+  font-size: inherit !important;
+}
+
+/* pandas / HTML tables are hard-coded small in Lab */
+.reveal .jp-RenderedHTMLCommon table {
+  font-size: var(--jp-content-font-size1) !important;
+}
+
+/* Prompts scale with everything else but stay proportionally small */
+.reveal .jp-InputPrompt,
+.reveal .jp-OutputPrompt {
+  font-size: calc(var(--jp-code-font-size) * 0.6) !important;
+  min-width: 3em !important;
+}
+
+.reveal .jp-Cell {
+  padding: var(--rise-cell-pad) 0 !important;
+}
