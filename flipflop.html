@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>CSS flip-flop</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; max-width: 40rem; color: #222; }
+  p { margin: 0 0 1rem; }
+
+  /* ---------- clock ----------
+     One infinite animation on the grid flips --phase every half cycle.
+     Everything else reads it through style queries; no other property is animated. */
+  .ff {
+    --phase: 0;
+    container-name: clk;
+    animation: tick 2s infinite;
+  }
+  @keyframes tick {
+    0%, 49.9%  { --phase: 0; }
+    50%, 100%  { --phase: 1; }
+  }
+
+  /* ---------- wires ----------
+     One grid, one cell, two overlapping carriers.
+     .col: vertical writing mode + inline-size containment. Its vertical size is
+           contained and queryable (it stretches to the row); its horizontal size
+           is content-driven, so leaf A's width becomes the column's width.
+     .row: horizontal + inline-size containment. Its horizontal size is contained
+           and queryable (it stretches to the column); its vertical size is
+           content-driven, so leaf B's height becomes the row's height.
+     So: column width = A, row height = B, and the grid's outline shows both. */
+  .ff {
+    display: grid;
+    grid-template-columns: auto;
+    grid-template-rows: auto;
+    width: fit-content;
+    justify-content: start;   /* don't stretch the auto track to fill the body */
+    align-content: start;
+    position: relative;
+    margin: 2rem 0 4.5rem;
+    outline: 2px solid #333;
+    background: #e8e8e8;
+  }
+  .col, .row { grid-area: 1 / 1; min-width: 0; min-height: 0; }
+  .col { writing-mode: vertical-lr; container: col / inline-size; }
+  .row { container: row / inline-size; }
+
+  /* ---------- memory ----------
+     A and B are the two halves of a master-slave flip-flop.
+     Resting state = emitting: contents skipped, size auto, so the intrinsic size
+     is the last remembered size. State 1 = 60px, state 0 = 20px, threshold 40px. */
+  .a, .b {
+    content-visibility: hidden;
+    contain-intrinsic-size: auto 0px;
+    width: auto;
+    height: auto;
+  }
+  .a { contain-intrinsic-size: auto 60px; }   /* seed: no remembered size yet, so start at 1 */
+
+  /* Phase 0: B computes, B := A.
+     A is emitting, so the column width is A's last remembered width. */
+  @container clk style(--phase: 0) {
+    .b { content-visibility: visible; height: 20px; }
+    @container row (inline-size > 40px) { .b { height: 60px; } }
+  }
+
+  /* Phase 1: A computes, A := NOT B.
+     B is emitting, so the row height is B's last remembered height.
+     .a lives in a vertical writing mode, so `width` is its block size. */
+  @container clk style(--phase: 1) {
+    .a { content-visibility: visible; width: 60px; }
+    @container col (inline-size > 40px) { .a { width: 20px; } }
+  }
+
+  /* ---------- readout ----------
+     Two lamps, absolutely positioned so they don't feed the wires. The A lamp lives
+     in .row and reads the column (A); the B lamp lives in .col and reads the row (B).
+     Their ring follows the clock, so you can see ticking even if the loop is dead. */
+  .lamp {
+    position: absolute; top: calc(100% + 12px);
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #bbb; border: 3px solid #bbb;
+    writing-mode: horizontal-tb;
+  }
+  .lamp-a { left: 0; }
+  .lamp-b { left: 38px; }
+  @container row (inline-size > 40px) { .lamp-a { background: #1a7f1a; } }
+  @container col (inline-size > 40px) { .lamp-b { background: #1a4f9f; } }
+  @container clk style(--phase: 1) { .lamp { border-color: #333; } }
+</style>
+
+<p>A flip-flop in CSS. No script, no hover, no checkbox. The bit lives in the browser's
+<i>last remembered size</i>; an animation is the clock; container queries are the wiring.</p>
+
+<div class="ff">
+  <div class="col">
+    <div class="a"></div>
+    <div class="lamp lamp-b"></div>
+  </div>
+  <div class="row">
+    <div class="b"></div>
+    <div class="lamp lamp-a"></div>
+  </div>
+</div>
+
+<p>Expected: the grey box is A wide by B tall and walks the corners every second:
+60×60, 20×60, 20×20, 60×20, repeat. Green lamp = A, blue lamp = B; their ring darkens
+on phase 1.</p>
+
+<p>If the ring never changes, custom-property keyframes or style queries aren't
+supported here. If the ring ticks but the box is stuck, the loop isn't closing: a box
+frozen at 60×60 means A's remembered width isn't being used; a box that collapses to
+20×20 or 0 means the remembered size isn't being recorded.</p>
+</html>
